@@ -12,4 +12,4 @@ To use the display, plug a FTDI TTL-232R-5V USB to serial cable into the serial 
 
 The display consists of a pcb board and an arduino sketch.
 
-![Retroleds](doc/retroleds-front.jpg?raw=true "Front view")
+![Retroleds](doc/retroleds_front.jpg?raw=true "Front view")
