@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP HDSP-21xx
+D 8 Character 5 and 7 mm Smart Alphanumerical LED Displays
+K led alphanumerical
+F Google it
+$ENDCMP
+#
+#End Doc Library

@@ -1,0 +1,3 @@
+(fp_lib_table
+  (lib (name hdsp-21xx)(type KiCad)(uri ${KIPRJMOD}/hdsp-21xx.pretty)(options "")(descr ""))
+)

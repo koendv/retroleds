@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name hdsp-21xx)(type Legacy)(uri ${KIPRJMOD}/hdsp-21xx.lib)(options "")(descr ""))
+)
