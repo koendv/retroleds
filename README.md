@@ -11,3 +11,5 @@ Optionally, a PS/2 keyboard can be connected. Any key typed on the keyboard is s
 To use the display, plug a FTDI TTL-232R-5V USB to serial cable into the serial port header and a 5V DC 2A power supply, center pin positive, into the barrel jack connector.  Carefully check connector polarity before plugging in.
 
 The display consists of a pcb board and an arduino sketch.
+
+!(doc/retroleds-front.jpg?raw=true "Front view")
