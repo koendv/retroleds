@@ -12,7 +12,8 @@ To use the display, plug a FTDI TTL-232R-5V USB to serial cable into the serial 
 
 The display consists of a pcb board and an arduino sketch.
 
-![Retroleds](doc/16x2display.jpg?raw=true "HDSP-21xx 16x2 led display")
+![Retroleds](doc/16x2display.jpg?raw=true "Picture of HDSP-21xx led display showing ascii, extended ascii, Japanese Katakana and Cyrillic characters.")
 
+Todo: check pcb.
 
 
