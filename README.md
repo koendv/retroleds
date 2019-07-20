@@ -4,7 +4,7 @@ HDSP-2107 HDSP-2112 HDSP-2110 HDSP-2111 HDSP-2113
           HDSP-2122           HDSP-2121 HDSP-2123 
 
 Any character received on the serial port is shown on the LED display.
-The display provides a very complete ASCII character set, including accented characters. 
+The display provides a very complete ASCII character set, including accented characters, Japanese Katakana and Cyrillic. 
 
 Optionally, a PS/2 keyboard can be connected. Any key typed on the keyboard is sent to the serial port. 
 
@@ -13,3 +13,6 @@ To use the display, plug a FTDI TTL-232R-5V USB to serial cable into the serial 
 The display consists of a pcb board and an arduino sketch.
 
 ![Retroleds](doc/16x2display.jpg?raw=true "HDSP-21xx 16x2 led display")
+
+
+
