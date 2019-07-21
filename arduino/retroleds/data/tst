@@ -1,5 +1,8 @@
 #!/usr/bin/python -u
 # hdsp-21xx test script
+# redirect output to display serial port: 
+# ./tst > /dev/ttyUSB0
+#
 import time
 
 # clear screen
