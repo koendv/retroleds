@@ -69,9 +69,11 @@ PS2Keyboard keyboard;
 #define MAX_DISPLAYS 4
 #define ALL_DISPLAYS 255
 
-#define MAX_FONTS 3
+#define MAX_FONTS 2
+#define DEFAULT_INTENSITY 4
+#define BAUD_RATE 19200
 
-// display chip enable pins, active low
+// hdsp-21xx chip enable pins, active low
 static uint8_t hdsp_chip_enable[4] = {LED_CE0, LED_CE1, LED_CE2, LED_CE3};
 
 // Display buffer
@@ -198,7 +200,7 @@ void hdsp_blink_char(uint8_t pos, bool blink) {
 }
 
 // write a character of the built-in character set on postion pos, pos = 0..31.
-// the character is ascii or katakana, depending on the built-in character set of the hdspxxxx.
+// the character is ascii or katakana, depending on the built-in character set of the hdsp-21xx.
 
 void hdsp_write_builtin_char(uint8_t pos, uint8_t ch, bool blinking = false) {
   
@@ -224,7 +226,7 @@ void hdsp_write_builtin_char(uint8_t pos, uint8_t ch, bool blinking = false) {
 
   /* 
    * Write using user-defined characters (udc) on position pos, pos = 0...31. font_id is font number, font_id = 0..2
-   * Leftmost character on the hdspxxxx is udc 0, rightmost character is udc 7.
+   * Leftmost character on the hdsp-21xx is set to udc 0, rightmost character is set to udc 7.
    * When a character has to be written to the display, look up the character bitmap in the font table, and update the bitmap of the udc.
    * This provides a very complete ascii character set, including accented characters. 
    */
@@ -250,10 +252,8 @@ void hdsp_write_user_defined_char(uint8_t pos, uint8_t ch, bool blinking = false
   uint16_t char_idx = 0;
   if (ch < 128)        /* the first 128 characters are the same in all code pages */
     char_idx = ch * 5; /* glcdfont.h font arranged in 5 rows of 7 pixels per character */
-  else {
-    ch = ch - 128;
-    char_idx = font_id * 640 + ch * 5;
-  }
+  else 
+    char_idx = font_id * 128 * 5 + ch * 5;
 
   // set position 'pos' of display to user-defined character 'pos'
   hdsp_write_cycle(disp, 0x18 | col, 0x80 | col, HIGH); /* Figure 2 in datasheet */  
@@ -284,8 +284,7 @@ void hdsp_write_user_defined_char(uint8_t pos, uint8_t ch, bool blinking = false
   return;
 }
 
-
-/* set display intensity 0..7. Also enables character blinking. */
+// set display intensity 0..7. Also enables character blinking.
 void hdsp_intensity(uint8_t i)
 {
   hdsp_write_cycle(ALL_DISPLAYS, 0x10, i & 0x7 | 0x8, HIGH); /* Figure 6 in datasheet */
@@ -313,8 +312,8 @@ void hdsp_scroll() {
   for (uint8_t i = 0; i < 16; i++) {
     hdsp_display[i] = hdsp_display[i+16];
     hdsp_display[i+16].ch = ' ';
-    hdsp_display[i+16].blinking = false;
     hdsp_display[i+16].font_id = 0;
+    hdsp_display[i+16].blinking = false;
   }
   hdsp_update();
 }
@@ -332,14 +331,16 @@ void display_ready() {
 }
 
 void display_test() {
-  //for (uint8_t i=0; i<32; i++) hdsp_write_builtin_char(i, 'a'+i, false);
-  for (uint8_t i=0; i<32; i++) hdsp_write_user_defined_char(i, 'a'+i, false);
-  for (uint8_t i=0; i<32; i++) hdsp_write_user_defined_char(i, 'a'+i, false, 0);
-  //return;
-  for (uint8_t i=0; i<8; i++) hdsp_write_user_defined_char(i, 'a'+i, false, 0);
-  for (uint8_t i=0; i<8; i++) hdsp_write_user_defined_char(i + 8, 0xc0+i, false, 1);
-  for (uint8_t i=0; i<8; i++) hdsp_write_user_defined_char(i + 16,0xc0+i, false, 2); 
-  for (uint8_t i=0; i<8; i++) hdsp_write_user_defined_char(i + 24,0xc0+i, false, 3);
+  for (uint8_t i=0; i<32; i++) hdsp_write_builtin_char(i, 'A'+i, false);  // depending upon display model, this shows ascii or katakana
+  delay(2000);
+  for (uint8_t i=0; i<32; i++) hdsp_write_builtin_char(i, 'a'+i, false);  // depending upon display model, this shows lower case ascii or upper case ascii
+  delay(2000);
+  for (uint8_t i=0; i<32; i++) hdsp_write_user_defined_char(i, 'a'+i, false); // lower case ascii
+  delay(2000);
+  for (uint8_t i=0; i<8; i++) hdsp_write_user_defined_char(i, 'a'+i, false, 0); // ascii
+  for (uint8_t i=0; i<8; i++) hdsp_write_user_defined_char(i + 8, 0xc0+i, false, 0); // accented characters
+  for (uint8_t i=0; i<8; i++) hdsp_write_user_defined_char(i + 16,0xc0+i, false, 1); // katakana
+  for (uint8_t i=0; i<8; i++) hdsp_write_user_defined_char(i + 24,0xc0+i, false, 2); // cyrillic
   return; 
 }
 
@@ -366,7 +367,7 @@ void setup() {
   digitalWrite(LED_WR,  HIGH);
   
   // Serial port
-  Serial.begin(19200);
+  Serial.begin(BAUD_RATE);
 
   // The following line is magic needed for pgm_read_byte() to function.
   if (millis() > 100000L) Serial.println((uint16_t) font, HEX);
@@ -380,7 +381,7 @@ void setup() {
   // clear display
   hdsp_reset();
   hdsp_clear_screen();
-  hdsp_intensity(4);  // Set default intensity and allow character blinking
+  hdsp_intensity(DEFAULT_INTENSITY);  // Set default intensity and allow character blinking
 
   // initialize ps/2 keyboard
   keyboard.begin(PS2_DAT, PS2_CLK);
@@ -388,7 +389,7 @@ void setup() {
   // ready!
   display_ready();
 
-  //display_test();
+  //display_test();  // uncomment for display test at power-on
 
   return;
 }
@@ -400,7 +401,7 @@ void keyboard_loop()
 {
   char ch = 0;
 
-  if (keyboard.available() /* && Serial.availableForWrite() XXX not needed on atmega328 - Serial.Write never blocks */ )
+  if (keyboard.available() /* && Serial.availableForWrite() // not needed on atmega328 - Serial.Write never blocks */ )
   {
     ch = keyboard.read();
     if (ch > 0) Serial.write(ch & 0xff);
@@ -429,7 +430,7 @@ void display_loop()
    Esc[11m             Select Katakana font
    Esc[12m             Select Cyrillic font
    */
-   
+  
   switch (term_state) {
     case STATE_START:
       if (ch == '\e') 
@@ -497,7 +498,6 @@ void display_loop()
       break;
 
     case STATE_DIGIT1:
-      esc_digit1 = ch - '0';
       if ((ch == 'm') && (esc_digit0 == 3)) 
       { 
         /* Esc[30m .. Esc[37m - set display intensity */
@@ -518,8 +518,7 @@ void display_loop()
       } 
       if (ch == 'G') 
       { 
-        /* Esc[10G .. Esc[33G - set cursor position, two digits. */
-        esc_digit1 = ch - '0'; 
+        /* Esc[10G .. Esc[33G - set cursor position, two digits. */ 
         int8_t new_cursor = esc_digit0 * 10 + esc_digit1 - 1; 
         if ((new_cursor >= 0) && (new_cursor <= 32)) term_cursor = new_cursor;
         term_state = STATE_START; 
