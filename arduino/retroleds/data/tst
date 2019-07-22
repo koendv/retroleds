@@ -1,37 +1,46 @@
 #!/usr/bin/python -u
 # hdsp-21xx test script
-# redirect output to display serial port: 
+# set port speed to 19200 and redirect output to display serial port
+#
+# linux:
+# stty speed 19200 < /dev/ttyUSB0
 # ./tst > /dev/ttyUSB0
 #
 import time
 
+esc = u'\x1b'
+
 # clear screen
-print u'\x1b' + "[2J"
+print esc + "[2J"
 print "hdsp-21xx"
 time.sleep(2)
 
 # blinking
-print "bl" + u'\x1b' + "[5m" + "i" + u'\x1b' + "[0m" + "nk"
+print "bl" + esc + "[5m" + "i" + esc + "[0m" + "nk"
 time.sleep(2)
 
 # intensity
 for x in "0123456":
-  print u'\x1b' + "[3" + x + "m" + "intensity"
+  print esc + "[3" + x + "m" + esc + "[1G" + "intensity " + x
   time.sleep(1)
-print u'\x1b' + "[34m"
+print esc + "[34m"
 
 # fonts
 for f in "012":
-  print u'\x1b' + "[1" + f + "m"
-  for c in range(0xc0, 0xc4):
+  print esc + "[1" + f + "m" + "font " + f,
+  for c in range(0xc0, 0xcc):
     print chr(c),
-    time.sleep(1)
-print u'\x1b' + "[10m"
+  print esc + "[1G"
+  time.sleep(2)
+print esc + "[10m"
+time.sleep(1)
 
 #cursor
+print esc + "[2J"
 for p in range(1, 33):
-  print u'\x1b' + "["  + str(p) + "G*" + u'\x1b' + "[1G"
+  print esc + "["  + str(p) + "G*" + esc + "[1G"
   time.sleep(1)
+  print esc + "["  + str(p) + "G "
 
-print "done"
+print esc + "[2J" + "done"
 #not truncated
