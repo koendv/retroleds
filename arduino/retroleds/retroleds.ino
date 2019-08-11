@@ -44,7 +44,7 @@
 #include <TimerOne.h>
 #include <Wire.h>
 #include <Adafruit_MCP23017.h>
-#include <PS2Keyboard.h>
+#include <PS2Keyboard.h> // with function key keycodes from K3NG_PS2Keyboard library added
 
 #include "glcdfont.h"
 
@@ -191,7 +191,7 @@ void hdsp_blink_char(uint8_t pos, bool blink) {
   uint8_t disp = pos >> 3;
   uint8_t col = pos & 0x7;
 
-  uint8_t addr = pos;
+  uint8_t addr = col;
   uint8_t dta =  blink ? 0x1 : 0x0;
 
   hdsp_write_cycle(disp, addr, dta, LOW); // This is the only hdsp_write_cycle where flash is low.
@@ -213,9 +213,9 @@ void hdsp_write_builtin_char(uint8_t pos, uint8_t ch, bool blinking = false) {
 #endif
   
   uint8_t disp = pos >> 3;
-  uint8_t column = pos & 0x7;
+  uint8_t col = pos & 0x7;
   
-  uint8_t addr = pos | 0x18;
+  uint8_t addr = col | 0x18;
   uint8_t dta = ch & 0x7f;
 
   // set blinking ("flash") attribute
@@ -318,6 +318,34 @@ void hdsp_scroll() {
   hdsp_update();
 }
 
+// print a character at current cursor position
+void hdsp_print_char(uint8_t ch, bool blinking = false, uint8_t font_id = 0) {
+  
+  /* scrolling */
+  if (term_cursor >= DISP_SIZE) {
+      hdsp_scroll(); /* scroll display one line */
+      term_cursor = 16;
+  }
+
+  /* write incoming character at current cursor position */
+  hdsp_write_user_defined_char(term_cursor, ch, blinking, font_id);
+
+  // save in buffer
+  hdsp_display[term_cursor].ch = ch;
+  hdsp_display[term_cursor].blinking = blinking;
+  hdsp_display[term_cursor].font_id = font_id;
+  
+  term_cursor++;
+
+  return;
+}
+
+// print blinking question mark as error indicator
+void hdsp_error() {
+  hdsp_print_char('?', true, 0);
+  return;
+}
+
 // display 'ready' 
 void display_ready() {
   const uint8_t prompt_len = 5;
@@ -389,8 +417,6 @@ void setup() {
   // ready!
   display_ready();
 
-  //display_test();  // uncomment for display test at power-on
-
   return;
 }
 
@@ -402,10 +428,8 @@ void keyboard_loop()
   char ch = 0;
 
   if (keyboard.available() /* && Serial.availableForWrite() // not needed on atmega328 - Serial.Write never blocks */ )
-  {
-    ch = keyboard.read();
-    if (ch > 0) Serial.write(ch & 0xff);
-  }
+    Serial.write(keyboard.read());
+
   return;
 }
 
@@ -424,20 +448,49 @@ void display_loop()
    Esc[2J              Clear screen
    Esc[5m              Turn blinking mode on
    Esc[0m              Turn blinking mode off
-   Esc[30m ... Esc[37m Set display intensity 0 ... 7. 0 = maximum brightness, 7 = blanked display
+   Esc[30m ... Esc[37m Set display intensity 0 ... 7. 0 = blanked display, 7 = maximum brightness. 
    Esc[1G ... Esc[33G  Set cursor position. 1 = top left. 33 = bottom right
    Esc[10m             Select default ascii font
    Esc[11m             Select Katakana font
    Esc[12m             Select Cyrillic font
+   Esc[2;              Display test
    */
   
   switch (term_state) {
     case STATE_START:
+      /* escape */
       if (ch == '\e') 
       { 
         term_state = STATE_ESC; 
         return;
       }
+
+      /* new line */
+      if (ch == '\n')
+      {
+        if (term_cursor >= 16) hdsp_scroll();
+        term_cursor = 16;
+        return;
+      }
+
+      /* carriage return */
+      if (ch == '\r')
+      {
+        term_cursor &= 0xf8;
+        return;
+      }
+  
+      /* backspace */
+      if (ch == '\b') {
+        if (term_cursor == 0) return;
+        --term_cursor;
+        hdsp_print_char(' ', false, 0); // overwrite with space
+        --term_cursor;
+        return;
+      }
+    
+      hdsp_print_char(ch, term_blinking, term_font_id); // write incoming character at current cursor position
+    
       break;
 
     case STATE_ESC:
@@ -446,6 +499,7 @@ void display_loop()
         term_state = STATE_BRACKET; 
         return; 
       }
+      hdsp_error();
       term_state = STATE_START;
       break;
 
@@ -456,6 +510,7 @@ void display_loop()
         term_state = STATE_DIGIT0; 
         return; 
       }
+      hdsp_error();
       term_state = STATE_START;
       break;
 
@@ -464,6 +519,13 @@ void display_loop()
       {
         /* Esc[2J - clear screen */
         hdsp_clear_screen(); 
+        term_state = STATE_START; 
+        return;
+      } 
+      if ((ch == ';') && (esc_digit0 == 2)) 
+      {
+        /* Esc[2; - display test */
+        display_test(); 
         term_state = STATE_START; 
         return;
       } 
@@ -494,6 +556,7 @@ void display_loop()
         term_state = STATE_DIGIT1; 
         return; 
       }
+      hdsp_error();
       term_state = STATE_START;
       break;
 
@@ -501,7 +564,7 @@ void display_loop()
       if ((ch == 'm') && (esc_digit0 == 3)) 
       { 
         /* Esc[30m .. Esc[37m - set display intensity */
-        if (esc_digit1 <= 7) hdsp_intensity(esc_digit1); 
+        if (esc_digit1 <= 7) hdsp_intensity(7 - esc_digit1); 
         term_state = STATE_START; 
         return;
       } 
@@ -523,52 +586,20 @@ void display_loop()
         if ((new_cursor >= 0) && (new_cursor <= 32)) term_cursor = new_cursor;
         term_state = STATE_START; 
         return;
-      } 
+      }
+      hdsp_error();
       term_state = STATE_START;
       break;
 
     default:
+      hdsp_error();
       term_state = STATE_START;
       break;
   }
   
-  /* carriage return new line */
-  if (ch == '\r')
-  {
-    term_cursor &= 0xf8;
-    return;
-  }
-  
-  /* new line */
-  if (ch == '\n')
-  {
-    if (term_cursor >= 16) hdsp_scroll();
-    term_cursor = 16;
-    return;
-  }
 
-  if (ch == '\b') {
-    if (term_cursor == 0) return;
-    --term_cursor;
-    hdsp_write_user_defined_char(term_cursor, ' ', term_blinking, term_font_id);
-    return;
-  }
   
-  /* scrolling */
-  if (term_cursor >= DISP_SIZE) {
-      hdsp_scroll(); /* scroll display one line */
-      term_cursor = 16;
-  }
-
-  /* write incoming character at current cursor position */
-  hdsp_write_user_defined_char(term_cursor, ch, term_blinking, term_font_id);
-
-  // save in buffer
-  hdsp_display[term_cursor].ch = ch;
-  hdsp_display[term_cursor].blinking = term_blinking;
-  hdsp_display[term_cursor].font_id = term_font_id;
   
-  term_cursor++;
 
   return;
 }

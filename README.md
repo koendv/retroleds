@@ -12,7 +12,7 @@ The display provides a very complete ASCII character set, including accented cha
 
 Optionally, a PS/2 keyboard can be connected. Any key typed on the keyboard is sent to the serial port. Together, display and PS/2 keyboard form a rudimentary serial terminal.
 
-To use the display, a USB to serial adapter and a 5V power supply are needed. Plug a FTDI TTL-232R-5V USB to serial cable into the serial port header. The serial port runs at 19200 8N1. Plug in a 5V DC 2A power supply, center pin positive, into the barrel jack connector.  Carefully check connector polarity before plugging in.
+To use the display, a USB to serial adapter and a 5V power supply are needed. Plug a USB to 5V TTL serial cable into the serial port header. The serial port runs at 19200 8N1, no hardware flow control. Plug in a 5V DC 2A power supply, center pin positive, into the barrel jack connector.  Carefully check connector polarity before plugging in.
 
 Escape codes provide simple display control.
 
@@ -21,12 +21,12 @@ Escape Code|Action
 Esc[2J|		     Clear screen
 Esc[5m|              Turn blinking mode on
 Esc[0m|              Turn blinking mode off
-Esc[30m ... Esc[37m| Set display intensity 0 ... 7. 0 = maximum brightness, 7 = blanked display. Default: 4.
+Esc[30m ... Esc[37m| Set display intensity 0 ... 7. 0 = maximum brightness, 7 = blanked display. Default: 3.
 Esc[1G ... Esc[33G|  Set cursor position. 1 = top left. 33 = bottom right
 Esc[10m|             Select ascii font (default)
 Esc[11m|             Select Katakana font
 Esc[12m|             Select Cyrillic font
+Esc[2;|		     Display test
 
-Todo: check pcb.
-
+A blinking question mark '?' indicates an unrecognized escape code.
 

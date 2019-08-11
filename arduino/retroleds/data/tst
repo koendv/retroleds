@@ -42,5 +42,7 @@ for p in range(1, 33):
   time.sleep(1)
   print esc + "["  + str(p) + "G "
 
-print esc + "[2J" + "done"
+#display test
+print esc + "[2;"
+
 #not truncated
