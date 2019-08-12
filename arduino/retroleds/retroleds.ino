@@ -229,6 +229,13 @@ void hdsp_write_builtin_char(uint8_t pos, uint8_t ch, bool blinking = false) {
    * Leftmost character on the hdsp-21xx is set to udc 0, rightmost character is set to udc 7.
    * When a character has to be written to the display, look up the character bitmap in the font table, and update the bitmap of the udc.
    * This provides a very complete ascii character set, including accented characters. 
+   *
+   * The font table contains 4 code pages.
+   * Each code page (ascii, extended ascii, katakana, cyrillic) contains 128 characters.
+   * Character codes less than 128 are retrieved from the first code page (ascii). 
+   * Character codes of 128 or higher are retrieved from extended ascii if the current font is 0, 
+   * from katakana if the current font is 1, and from cyrillic if the current font is 2.
+   *
    */
 
 void hdsp_write_user_defined_char(uint8_t pos, uint8_t ch, bool blinking = false, uint8_t font_id = 0) {
@@ -251,9 +258,9 @@ void hdsp_write_user_defined_char(uint8_t pos, uint8_t ch, bool blinking = false
    // find offset in font table for character ch. 
   uint16_t char_idx = 0;
   if (ch < 128)        /* the first 128 characters are the same in all code pages */
-    char_idx = ch * 5; /* glcdfont.h font arranged in 5 rows of 7 pixels per character */
+    char_idx = ch * 7; /* glcdfont.h font arranged in 7 rows of 5 pixels per character */
   else 
-    char_idx = font_id * 128 * 5 + ch * 5;
+    char_idx = font_id * 128 * 7 + ch * 7;
 
   // set position 'pos' of display to user-defined character 'pos'
   hdsp_write_cycle(disp, 0x18 | col, 0x80 | col, HIGH); /* Figure 2 in datasheet */  
@@ -265,17 +272,9 @@ void hdsp_write_user_defined_char(uint8_t pos, uint8_t ch, bool blinking = false
     
   for (uint8_t row = 0; row <= 6; row++)
   {
-    uint8_t pixels = 0;
-    for (uint8_t col = 0; col <= 4; col++)
-    {
-      uint16_t line_idx = font + char_idx + col;
-      //uint8_t line = font[char_idx + col]; // if font table in ram
-      uint8_t line = pgm_read_byte(line_idx); // if font table in progmem
-      uint8_t pixel = (line >> row) & 0x1; 
-      pixels |= pixel << (4 - col);
-    }
-    // write row of pixels to udc ram
-    hdsp_write_cycle(disp, 0x08 | row, pixels, HIGH);
+    uint16_t row_idx = font + char_idx + row;
+    uint8_t pixels = pgm_read_byte(row_idx); // font table in progmem
+    hdsp_write_cycle(disp, 0x08 | row, pixels, HIGH); // write row of pixels to udc ram
   }  
 
   // set blinking ("flash") attribute
