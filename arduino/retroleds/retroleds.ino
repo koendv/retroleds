@@ -302,6 +302,7 @@ void hdsp_clear_screen() {
     hdsp_display[i].font_id = 0;
     hdsp_display[i].blinking = false;
   }
+  term_cursor = 0;
   hdsp_update();
   return;
 }
@@ -314,6 +315,7 @@ void hdsp_scroll() {
     hdsp_display[i+16].font_id = 0;
     hdsp_display[i+16].blinking = false;
   }
+  term_cursor = 16;
   hdsp_update();
 }
 
@@ -321,10 +323,7 @@ void hdsp_scroll() {
 void hdsp_print_char(uint8_t ch, bool blinking = false, uint8_t font_id = 0) {
   
   /* scrolling */
-  if (term_cursor >= DISP_SIZE) {
-      hdsp_scroll(); /* scroll display one line */
-      term_cursor = 16;
-  }
+  if (term_cursor >= DISP_SIZE) hdsp_scroll(); /* scroll display one line */
 
   /* write incoming character at current cursor position */
   hdsp_write_user_defined_char(term_cursor, ch, blinking, font_id);
