@@ -10,7 +10,7 @@ Inform me if other LED displays work too.
 The display consists of a pcb board and an arduino sketch.
 
 Any character received on the serial port is shown on the LED display.
-The display provides a very complete ASCII character set, including accented characters, Japanese Katakana and Cyrillic. 
+The display provides a very complete ASCII character set, including accented characters, Japanese Katakana and Cyrillic. Other 5x7 bitmap fonts can be added if needed.
 
 Optionally, a PS/2 keyboard can be connected. Any key typed on the keyboard is sent to the serial port. Together, display and PS/2 keyboard form a rudimentary serial terminal.
 
