@@ -1,14 +1,14 @@
 #!/usr/bin/python -u
 # hdsp-21xx test script
-# set port speed to 19200 and redirect output to display serial port
+# set port speed to 38400 and redirect output to display serial port
 #
 # linux:
-# stty speed 19200 < /dev/ttyUSB0
+# stty speed 38400 < /dev/ttyUSB0
 # ./tst > /dev/ttyUSB0
 #
 import time
 
-esc = u'\x1b'
+esc = chr(0x1b)
 
 # clear screen
 print esc + "[2J"
@@ -16,21 +16,23 @@ print "hdsp-21xx"
 time.sleep(2)
 
 # blinking
-print "bl" + esc + "[5m" + "i" + esc + "[0m" + "nk"
+print esc + "[2J"
+print "bl" + esc + "[5m" + "i" + esc + "[0m" + "nking"
 time.sleep(2)
 
 # intensity
-for x in "0123456":
+for x in "01234567":
   print esc + "[3" + x + "m" + esc + "[1G" + "intensity " + x
   time.sleep(1)
-print esc + "[34m"
+print esc + "[33m"
 
 # fonts
 for f in "012":
-  print esc + "[1" + f + "m" + "font " + f,
-  for c in range(0xc0, 0xcc):
-    print chr(c),
-  print esc + "[1G"
+  s = esc + "[1" + f + "m" + "font " + f + " "
+  for c in range(0xc0, 0xd9):
+    s += chr(c)
+  s += esc + "[1G"
+  print s;
   time.sleep(2)
 print esc + "[10m"
 time.sleep(1)

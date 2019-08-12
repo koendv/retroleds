@@ -1,0 +1,48 @@
+Arduino libraries:
+PS2Keyboard library: Keycodes for function keys added
+Adafruit mcp23017 library: mcp23017 i2c clock speed increased to 400kHz
+
+*** PS2Keyboard/PS2Keyboard.h.ORIG	2019-08-12 10:26:44.776599041 +0200
+--- PS2Keyboard/PS2Keyboard.h	2019-08-12 10:27:33.036642608 +0200
+***************
+*** 65,70 ****
+--- 65,90 ----
+  #define PS2_F12				0
+  #define PS2_SCROLL			0
+  
++ 
++ // Additional keycodes from K3NG_PS2Keyboard library
++ 
++ #define PS2_INSERT      128
++ #define PS2_HOME        129
++ #define PS2_END         156
++ #define PS2_F1          130
++ #define PS2_F2          131
++ #define PS2_F3          132
++ #define PS2_F4          133
++ #define PS2_F5          134
++ #define PS2_F6          135
++ #define PS2_F7          136
++ #define PS2_F8          137
++ #define PS2_F9          138
++ #define PS2_F10         139
++ #define PS2_F11         140
++ #define PS2_F12         141
++ #define PS2_SCROLL      142
++ 
+  #define PS2_INVERTED_EXCLAMATION	161 // ¡
+  #define PS2_CENT_SIGN			162 // ¢
+  #define PS2_POUND_SIGN			163 // £
+
+*** Adafruit_MCP23017_Arduino_Library/Adafruit_MCP23017.cpp.ORIG	2019-08-12 10:17:50.577650529 +0200
+--- Adafruit_MCP23017_Arduino_Library/Adafruit_MCP23017.cpp	2019-08-12 10:20:22.661014888 +0200
+***************
+*** 109,114 ****
+--- 109,115 ----
+  	i2caddr = addr;
+  
+  	Wire.begin();
++ 	Wire.setClock(400000L);
+  
+  	// set defaults!
+  	// all inputs on port A and B

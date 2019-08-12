@@ -44,7 +44,7 @@
 #include <TimerOne.h>
 #include <Wire.h>
 #include <Adafruit_MCP23017.h>
-#include <PS2Keyboard.h> // with function key keycodes from K3NG_PS2Keyboard library added
+#include <PS2Keyboard.h> // with function key keycodes added
 
 #include "glcdfont.h"
 
@@ -71,7 +71,7 @@ PS2Keyboard keyboard;
 
 #define MAX_FONTS 2
 #define DEFAULT_INTENSITY 4
-#define BAUD_RATE 19200
+#define BAUD_RATE 38400
 
 // hdsp-21xx chip enable pins, active low
 static uint8_t hdsp_chip_enable[4] = {LED_CE0, LED_CE1, LED_CE2, LED_CE3};
@@ -369,6 +369,7 @@ void display_test() {
   for (uint8_t i=0; i<8; i++) hdsp_write_user_defined_char(i + 8, 0xc0+i, false, 0); // accented characters
   for (uint8_t i=0; i<8; i++) hdsp_write_user_defined_char(i + 16,0xc0+i, false, 1); // katakana
   for (uint8_t i=0; i<8; i++) hdsp_write_user_defined_char(i + 24,0xc0+i, false, 2); // cyrillic
+  delay(2000);
   return; 
 }
 
@@ -425,8 +426,6 @@ void setup() {
 
 void keyboard_loop()
 {
-  char ch = 0;
-
   if (keyboard.available() /* && Serial.availableForWrite() // not needed on atmega328 - Serial.Write never blocks */ )
     Serial.write(keyboard.read());
 
@@ -476,7 +475,8 @@ void display_loop()
       /* carriage return */
       if (ch == '\r')
       {
-        term_cursor &= 0xf8;
+        if (term_cursor >= 16) term_cursor = 16;
+        else  term_cursor = 0;
         return;
       }
   
@@ -596,11 +596,6 @@ void display_loop()
       term_state = STATE_START;
       break;
   }
-  
-
-  
-  
-
   return;
 }
   
