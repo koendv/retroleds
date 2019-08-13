@@ -70,7 +70,7 @@ PS2Keyboard keyboard;
 #define ALL_DISPLAYS 255
 
 #define MAX_FONTS 2
-#define DEFAULT_INTENSITY 4
+#define DEFAULT_BRIGHTNESS 4
 #define BAUD_RATE 38400
 
 // hdsp-21xx chip enable pins, active low
@@ -97,6 +97,7 @@ void mcp_init() {
 static bool term_blinking = false;
 static uint8_t term_font_id = 0;
 static uint8_t term_cursor = 0;
+static uint8_t term_brightness = DEFAULT_BRIGHTNESS;
 
 // terminal state machine for parsing escape codes
 typedef enum {STATE_START, STATE_ESC, STATE_BRACKET, STATE_DIGIT0, STATE_DIGIT1} term_state_type;
@@ -283,10 +284,11 @@ void hdsp_write_user_defined_char(uint8_t pos, uint8_t ch, bool blinking = false
   return;
 }
 
-// set display intensity 0..7. Also enables character blinking.
-void hdsp_intensity(uint8_t i)
+// set display brightness 0..7. Also enables character blinking.
+void hdsp_brightness(uint8_t i)
 {
-  hdsp_write_cycle(ALL_DISPLAYS, 0x10, i & 0x7 | 0x8, HIGH); /* Figure 6 in datasheet */
+  term_brightness = i;
+  hdsp_write_cycle(ALL_DISPLAYS, 0x10, term_brightness & 0x7 | 0x08, HIGH); /* Brightness, Figure 6 in datasheet */
 }
 
 // write internal character buffer to display
@@ -303,7 +305,8 @@ void hdsp_clear_screen() {
     hdsp_display[i].blinking = false;
   }
   term_cursor = 0;
-  hdsp_update();
+  hdsp_write_cycle(ALL_DISPLAYS, 0x10, 0x80 | term_brightness & 0x7 | 0x08, HIGH); /* Clear display, Figure 6 in datasheet */
+  delay(1); /* Needs three clock cycles (110 us) to execute, so 1 ms is more than enough */
   return;
 }
 
@@ -408,7 +411,7 @@ void setup() {
   // clear display
   hdsp_reset();
   hdsp_clear_screen();
-  hdsp_intensity(DEFAULT_INTENSITY);  // Set default intensity and allow character blinking
+  hdsp_brightness(DEFAULT_BRIGHTNESS);  // Set default brightness and allow character blinking
 
   // initialize ps/2 keyboard
   keyboard.begin(PS2_DAT, PS2_CLK);
@@ -445,7 +448,7 @@ void display_loop()
    Esc[2J              Clear screen
    Esc[5m              Turn blinking mode on
    Esc[0m              Turn blinking mode off
-   Esc[30m ... Esc[37m Set display intensity 0 ... 7. 0 = blanked display, 7 = maximum brightness. 
+   Esc[30m ... Esc[37m Set display brightness 0 ... 7. 0 = blanked display, 7 = maximum brightness. 
    Esc[1G ... Esc[33G  Set cursor position. 1 = top left. 33 = bottom right
    Esc[10m             Select default ascii font
    Esc[11m             Select Katakana font
@@ -561,8 +564,8 @@ void display_loop()
     case STATE_DIGIT1:
       if ((ch == 'm') && (esc_digit0 == 3)) 
       { 
-        /* Esc[30m .. Esc[37m - set display intensity */
-        if (esc_digit1 <= 7) hdsp_intensity(7 - esc_digit1); 
+        /* Esc[30m .. Esc[37m - set display brightness */
+        if (esc_digit1 <= 7) hdsp_brightness(7 - esc_digit1); 
         term_state = STATE_START; 
         return;
       } 

@@ -23,7 +23,7 @@ Escape Code|Action
 Esc[2J|		     Clear screen
 Esc[5m|              Turn blinking mode on
 Esc[0m|              Turn blinking mode off
-Esc[30m ... Esc[37m| Set display intensity 0 ... 7. 0 = blanked display, 7 = maximum brightness. Default: 3.
+Esc[30m ... Esc[37m| Set display brightness, 0 ... 7. 0 = blanked display, 7 = maximum brightness. Default: 3.
 Esc[1G ... Esc[33G|  Set cursor position. 1 = top left. 33 = bottom right
 Esc[10m|             Select ascii font (default)
 Esc[11m|             Select Katakana font
